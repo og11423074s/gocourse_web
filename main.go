@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -15,9 +17,14 @@ import (
 func main() {
 
 	router := mux.NewRouter()
-
+	// Load .env file
+	_ = godotenv.Load()
 	dsn := fmt.Sprintf("%s:%s@(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
-		"root", "root", "127.0.0.1", "3320", "go_course_web")
+		os.Getenv("DATABASE_USER"),
+		os.Getenv("DATABASE_PASSWORD"),
+		os.Getenv("DATABASE_HOST"),
+		os.Getenv("DATABASE_PORT"),
+		os.Getenv("DATABASE_NAME"))
 
 	db, _ := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	db = db.Debug()
