@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"time"
@@ -12,6 +15,14 @@ import (
 func main() {
 
 	router := mux.NewRouter()
+
+	dsn := fmt.Sprintf("%s:%s@(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
+		"root", "root", "127.0.0.1", "3320", "go_course_web")
+
+	db, _ := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db = db.Debug()
+
+	_ = db.AutoMigrate(&user.User{})
 
 	userSrv := user.NewService()
 	userEnd := user.MakeEndpoints(userSrv)
