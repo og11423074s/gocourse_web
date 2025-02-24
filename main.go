@@ -19,6 +19,10 @@ func main() {
 	router := mux.NewRouter()
 	// Load .env file
 	_ = godotenv.Load()
+
+	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
+
+	// Connect to database
 	dsn := fmt.Sprintf("%s:%s@(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
 		os.Getenv("DATABASE_USER"),
 		os.Getenv("DATABASE_PASSWORD"),
@@ -31,13 +35,16 @@ func main() {
 
 	_ = db.AutoMigrate(&user.User{})
 
-	userSrv := user.NewService()
+	userRepo := user.NewRepo(logger, db)
+
+	userSrv := user.NewService(logger, userRepo)
 	userEnd := user.MakeEndpoints(userSrv)
 
 	router.HandleFunc("/users", userEnd.Create).Methods("POST")
+	router.HandleFunc("/users/{id}", userEnd.Get).Methods("GET")
 	router.HandleFunc("/users", userEnd.GetAll).Methods("GET")
-	router.HandleFunc("/users", userEnd.Update).Methods("PATH")
-	router.HandleFunc("/users", userEnd.Delete).Methods("DELETE")
+	router.HandleFunc("/users/{id}", userEnd.Update).Methods("PATH")
+	router.HandleFunc("/users/{id}", userEnd.Delete).Methods("DELETE")
 
 	srv := &http.Server{
 		Handler:      http.TimeoutHandler(router, time.Second*3, "Timeout!!"),
