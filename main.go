@@ -1,13 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"github.com/joho/godotenv"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
+	"github.com/og11423074s/go_course_web/pkg/bootstrap"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -20,30 +17,26 @@ func main() {
 	// Load .env file
 	_ = godotenv.Load()
 
-	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
+	// Initialize logger
+	logger := bootstrap.InitLogger()
 
 	// Connect to database
-	dsn := fmt.Sprintf("%s:%s@(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
-		os.Getenv("DATABASE_USER"),
-		os.Getenv("DATABASE_PASSWORD"),
-		os.Getenv("DATABASE_HOST"),
-		os.Getenv("DATABASE_PORT"),
-		os.Getenv("DATABASE_NAME"))
+	db, err := bootstrap.DBConnection()
 
-	db, _ := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	db = db.Debug()
+	if err != nil {
+		logger.Fatal(err)
+	}
 
-	_ = db.AutoMigrate(&user.User{})
-
+	// User repository
 	userRepo := user.NewRepo(logger, db)
-
+	// User service
 	userSrv := user.NewService(logger, userRepo)
 	userEnd := user.MakeEndpoints(userSrv)
 
 	router.HandleFunc("/users", userEnd.Create).Methods("POST")
 	router.HandleFunc("/users/{id}", userEnd.Get).Methods("GET")
 	router.HandleFunc("/users", userEnd.GetAll).Methods("GET")
-	router.HandleFunc("/users/{id}", userEnd.Update).Methods("PATH")
+	router.HandleFunc("/users/{id}", userEnd.Update).Methods("PATCH")
 	router.HandleFunc("/users/{id}", userEnd.Delete).Methods("DELETE")
 
 	srv := &http.Server{
@@ -53,10 +46,6 @@ func main() {
 		WriteTimeout: 5 * time.Second,
 	}
 
-	err := srv.ListenAndServe()
-
-	if err != nil {
-		log.Fatal(err)
-	}
+	log.Fatal(srv.ListenAndServe())
 
 }
