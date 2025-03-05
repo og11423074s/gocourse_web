@@ -1,6 +1,7 @@
-package user
+package domain
 
 import (
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"time"
 )
@@ -11,7 +12,16 @@ type User struct {
 	LastName  string         `json:"last_name" gorm:"type:char(50); not null"`
 	Email     string         `json:"email" gorm:"type:char(50); not null"`
 	Phone     string         `json:"phone" gorm:"type:char(30); not null"`
+	Course    *Course        `gorm:"-"`
 	CreatedAt *time.Time     `json:"-"`
 	UpdatedAt *time.Time     `json:"-"`
 	Deleted   gorm.DeletedAt `json:"-"`
+}
+
+func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
+
+	if u.ID == "" {
+		u.ID = uuid.New().String()
+	}
+	return
 }
