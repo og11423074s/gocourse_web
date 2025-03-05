@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/joho/godotenv"
 	"github.com/og11423074s/go_course_web/internal/course"
+	"github.com/og11423074s/go_course_web/internal/enrollment"
 	"github.com/og11423074s/go_course_web/pkg/bootstrap"
 	"log"
 	"net/http"
@@ -34,15 +35,22 @@ func main() {
 	// Course repository
 	courseRepo := course.NewRepo(logger, db)
 
+	// Enroll repository
+	enrollRepo := enrollment.NewRepo(logger, db)
+
 	// User service
 	userSrv := user.NewService(logger, userRepo)
 
 	// Course service
 	courseSrv := course.NewService(logger, courseRepo)
 
+	// Enroll service
+	enrollSrv := enrollment.NewService(logger, enrollRepo, userSrv, courseSrv)
+
 	// Endpoints
 	userEnd := user.MakeEndpoints(userSrv)
 	courseEnd := course.MakeEndpoints(courseSrv)
+	enrollEnd := enrollment.MakeEndpoints(enrollSrv)
 
 	// User endpoints
 	router.HandleFunc("/users", userEnd.Create).Methods("POST")
@@ -57,6 +65,9 @@ func main() {
 	router.HandleFunc("/courses", courseEnd.GetAll).Methods("GET")
 	router.HandleFunc("/courses/{id}", courseEnd.Update).Methods("PATCH")
 	router.HandleFunc("/courses/{id}", courseEnd.Delete).Methods("DELETE")
+
+	// Enroll endpoints
+	router.HandleFunc("/enrollments", enrollEnd.Create).Methods("POST")
 
 	srv := &http.Server{
 		Handler:      http.TimeoutHandler(router, time.Second*3, "Timeout!!"),

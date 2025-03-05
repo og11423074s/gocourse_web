@@ -28,11 +28,16 @@ func DBConnection() (*gorm.DB, error) {
 	}
 
 	if os.Getenv("DATABASE_MIGRATE") == "true" {
+
 		if err := db.AutoMigrate(&domain.User{}); err != nil {
 			return nil, err
 		}
 
 		if err := db.AutoMigrate(&domain.Course{}); err != nil {
+			return nil, err
+		}
+
+		if err := db.AutoMigrate(&domain.Enrollment{}); err != nil {
 			return nil, err
 		}
 
